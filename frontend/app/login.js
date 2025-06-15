@@ -6,31 +6,48 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import authService from '../services/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+
+    setLoading(true);
     
-    // Simulate successful login
-    Alert.alert(
-      'Login Successful', 
-      `Welcome back, ${email}!`,
-      [
-        {
-          text: 'Continue',
-          onPress: () => router.push('/babyprofile')
-        }
-      ]
-    );
+    try {
+      const result = await authService.login(email.trim().toLowerCase(), password);
+      
+      if (result.success) {
+        Alert.alert(
+          'Login Successful', 
+          `Welcome back, ${result.user.firstName}!`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.push('/dashboard')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Login Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,21 +61,34 @@ export default function LoginScreen() {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
-      />
-
-      <TextInput
+        autoCorrect={false}
+        editable={!loading}
+      />      <TextInput
         style={styles.input}
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
-        <Text style={styles.buttonText}>Log In</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleLogin} 
+        activeOpacity={0.8}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Log In</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/signup')}>
+      <TouchableOpacity 
+        onPress={() => router.push('/signup')}
+        disabled={loading}
+      >
         <Text style={styles.linkText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
     </View>

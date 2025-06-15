@@ -6,17 +6,36 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import authService from '../services/auth';
+import apiClient from '../services/api';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
-    if (!email || !password || !confirmPassword) {
+  const testConnection = async () => {
+    try {
+      setLoading(true);
+      const result = await apiClient.testConnection();
+      Alert.alert('Success', 'Connected to backend successfully!');
+      console.log('Connection test result:', result);
+    } catch (error) {
+      Alert.alert('Connection Failed', `Error: ${error.message}`);
+      console.error('Connection test failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -26,17 +45,42 @@ export default function SignupScreen() {
       return;
     }
 
-    // Simulate successful signup
-    Alert.alert(
-      'Registration Successful', 
-      `Account created for ${email}!`,
-      [
-        {
-          text: 'Continue',
-          onPress: () => router.push('/babyprofile')
-        }
-      ]
-    );
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await authService.register({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        confirmPassword
+      });
+
+      if (result.success) {
+        Alert.alert(
+          'Registration Successful', 
+          `Welcome to Angel Eyes, ${result.user.firstName}!`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.push('/babyprofile')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Registration Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Registration error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,11 +89,30 @@ export default function SignupScreen() {
 
       <TextInput
         style={styles.input}
+        placeholder="First Name"
+        value={firstName}
+        onChangeText={setFirstName}
+        autoCapitalize="words"
+        editable={!loading}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Last Name"
+        value={lastName}
+        onChangeText={setLastName}
+        autoCapitalize="words"
+        editable={!loading}
+      />
+
+      <TextInput
+        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
+        keyboardType="email-address"        autoCapitalize="none"
+        autoCorrect={false}
+        editable={!loading}
       />
 
       <TextInput
@@ -58,6 +121,7 @@ export default function SignupScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
 
       <TextInput
@@ -66,13 +130,25 @@ export default function SignupScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry
-      />
+        editable={!loading}      />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup} activeOpacity={0.8}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleSignup} 
+        activeOpacity={0.8}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign Up</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/login')}>
+      <TouchableOpacity 
+        onPress={() => router.push('/login')}
+        disabled={loading}
+      >
         <Text style={styles.linkText}>Already have an account? Log in</Text>
       </TouchableOpacity>
     </View>
@@ -113,7 +189,20 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
-    elevation: 2,
+    elevation: 2,  },
+  testButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    marginBottom: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   button: {
     backgroundColor: '#6a1b9a',

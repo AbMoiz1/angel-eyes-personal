@@ -8,30 +8,25 @@ import {
   ScrollView,
   Alert,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-
-// Utility function to generate a unique ID
-function generateUniqueID() {
-  return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
-}
+import apiClient from '../services/api';
 
 export default function BabyProfileScreen() {
   const router = useRouter();
-  
-  // Form state
+    // Form state
   const [name, setName] = useState('');
   const [dob, setDob] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('Male');
-  
-  // For storing multiple baby profiles in this session
-  const [babies, setBabies] = useState([]);
+  const [feedingType, setFeedingType] = useState('Breastfeeding');
+  const [loading, setLoading] = useState(false);
 
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || dob;
@@ -47,74 +42,132 @@ export default function BabyProfileScreen() {
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   };
 
-  // Create a baby profile object with serialized date
-  const createBabyProfile = () => {
+  // Validate form data
+  const validateForm = () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter your baby\'s name');
-      return null;
+      return false;
     }
-    if (!height.trim()) {
-      Alert.alert('Error', 'Please enter height');
-      return null;
+    if (!height.trim() || isNaN(parseFloat(height))) {
+      Alert.alert('Error', 'Please enter a valid height in cm');
+      return false;
     }
-    if (!weight.trim()) {
-      Alert.alert('Error', 'Please enter weight');
-      return null;
+    if (!weight.trim() || isNaN(parseFloat(weight))) {
+      Alert.alert('Error', 'Please enter a valid weight in kg');
+      return false;
     }
+    if (dob > new Date()) {
+      Alert.alert('Error', 'Date of birth cannot be in the future');
+      return false;
+    }
+    return true;
+  };
+  // Save baby profile and navigate to Dashboard
+  const handleSaveAndContinue = async () => {
+    if (!validateForm()) return;
 
-    // Convert Date object to ISO string for safe navigation parameter passing
-    return {
-      id: generateUniqueID(),
-      name,
-      dob: dob.toISOString(),
-      height,
-      weight,
-      gender,
-    };
+    setLoading(true);
+
+    try {
+      const babyData = {
+        name: name.trim(),
+        dateOfBirth: dob.toISOString(),
+        gender,
+        height: parseFloat(height),
+        weight: parseFloat(weight),
+        feedingSettings: {
+          feedingType
+        }
+      };
+
+      const response = await apiClient.createBaby(babyData);
+
+      if (response.success) {
+        Alert.alert(
+          'Baby Profile Created',
+          `Welcome ${name}! Your profile has been saved successfully.`,
+          [
+            {
+              text: 'Continue to Dashboard',
+              onPress: () => router.push('/dashboard')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create baby profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Create baby profile error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Save baby profile and clear form for adding another baby
+  const handleSaveAndAddAnother = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      const babyData = {
+        name: name.trim(),
+        dateOfBirth: dob.toISOString(),
+        gender,
+        height: parseFloat(height),
+        weight: parseFloat(weight),
+        feedingSettings: {
+          feedingType
+        }
+      };
+
+      const response = await apiClient.createBaby(babyData);
+
+      if (response.success) {
+        Alert.alert(
+          'Baby Profile Created',
+          `${name}'s profile has been saved successfully!`,
+          [
+            {
+              text: 'Add Another Baby',
+              onPress: () => {                // Clear form
+                setName('');
+                setDob(new Date());
+                setHeight('');
+                setWeight('');
+                setGender('Male');
+                setFeedingType('Breastfeeding');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create baby profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Create baby profile error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Save baby profile and navigate to Dashboard (finishing the process)
-  const handleSaveAndContinue = () => {
-    const newBaby = createBabyProfile();
-    if (!newBaby) return;
-
-    const updatedBabies = [...babies, newBaby];
-    setBabies(updatedBabies);
-
+  // Skip baby profile creation and go to dashboard
+  const handleSkip = () => {
     Alert.alert(
-      'Baby Profile Saved',
-      `Profile Details:\nID: ${newBaby.id}\nName: ${name}\nDOB: ${formatDate(dob)}\nGender: ${gender}\nHeight: ${height} cm\nWeight: ${weight} kg`,
+      'Skip Baby Profile',
+      'You can always add baby profiles later from the dashboard.',
       [
         {
-          text: 'OK',
-          onPress: () => router.push({
-            pathname: '/dashboard',
-            params: { babies: JSON.stringify(updatedBabies) }
-          })
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Skip',
+          onPress: () => router.push('/dashboard')
         }
       ]
-    );
-  };
-
-  // Save baby profile and clear form for adding another baby
-  const handleSaveAndAddAnother = () => {
-    const newBaby = createBabyProfile();
-    if (!newBaby) return;
-
-    setBabies(prev => [...prev, newBaby]);
-
-    Alert.alert(
-      'Baby Profile Saved',
-      `Profile Saved:\nID: ${newBaby.id}\nName: ${name}\nDOB: ${formatDate(dob)}\nGender: ${gender}\nHeight: ${height} cm\nWeight: ${weight} kg`
-    );
-
-    // Clear form fields for new entry
-    setName('');
-    setDob(new Date());
-    setHeight('');
-    setWeight('');
-    setGender('Male');
-  };
+    );  };
 
   return (
     <KeyboardAvoidingView
@@ -133,6 +186,7 @@ export default function BabyProfileScreen() {
             placeholder="Enter name"
             value={name}
             onChangeText={setName}
+            editable={!loading}
           />
         </View>
 
@@ -176,14 +230,12 @@ export default function BabyProfileScreen() {
           <Text style={styles.inputLabel}>Height (cm)</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter height"
-            value={height}
+            placeholder="Enter height"            value={height}
             onChangeText={setHeight}
             keyboardType="numeric"
+            editable={!loading}
           />
-        </View>
-
-        {/* Weight */}
+        </View>        {/* Weight */}
         <View style={{width: '100%'}}>
           <Text style={styles.inputLabel}>Weight (kg)</Text>
           <TextInput
@@ -192,27 +244,65 @@ export default function BabyProfileScreen() {
             value={weight}
             onChangeText={setWeight}
             keyboardType="numeric"
+            editable={!loading}
           />
+        </View>
+
+        {/* Feeding Type */}
+        <View style={{width: '100%'}}>
+          <Text style={styles.inputLabel}>Feeding Type</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={feedingType}
+              onValueChange={setFeedingType}
+              style={styles.picker}
+              mode="dropdown"
+              enabled={!loading}
+            >
+              <Picker.Item label="Breastfeeding" value="Breastfeeding" />
+              <Picker.Item label="Formula" value="Formula" />
+              <Picker.Item label="Mixed (Breast + Formula)" value="Mixed" />
+              <Picker.Item label="Solid Food" value="Solid" />
+            </Picker>
+          </View>
         </View>
 
         {/* Buttons for Save Options */}
         <View style={{width: '100%', marginTop: 20}}>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
-              style={styles.saveButton}
+              style={[styles.saveButton, loading && styles.buttonDisabled]}
               onPress={handleSaveAndAddAnother}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.buttonText}>Save & Add Another</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Save & Add Another</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.saveButton}
+              style={[styles.saveButton, loading && styles.buttonDisabled]}
               onPress={handleSaveAndContinue}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.buttonText}>Save & Continue</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Save & Continue</Text>
+              )}
             </TouchableOpacity>
           </View>
+          
+          <TouchableOpacity 
+            style={styles.skipButton}
+            onPress={handleSkip}
+            disabled={loading}
+          >
+            <Text style={styles.skipButtonText}>Skip for now</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Note about monitoring */}

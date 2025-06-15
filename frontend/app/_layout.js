@@ -1,5 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Layout() {
@@ -52,9 +53,10 @@ export default function Layout() {
         options={{
           title: 'Dashboard',
           headerBackTitleVisible: false,
-          presentation: 'card',
-          headerRight: () => (
-            <Ionicons name="settings-outline" size={24} color="#512da8" style={{ marginRight: 15 }} />
+          presentation: 'card',          headerRight: () => (
+            <View style={{ marginRight: 15 }}>
+              <Ionicons name="settings-outline" size={24} color="#512da8" />
+            </View>
           ),
         }}
       />
