@@ -7,9 +7,12 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  LogBox,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import authService from '../services/auth';
+
+LogBox.ignoreLogs(['Warning: Text strings must be rendered within a <Text> component']);
 
 export default function LoginScreen() {
   const router = useRouter();
