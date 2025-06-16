@@ -13,8 +13,12 @@ export default function Page() {
         
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            {/* Simple logo placeholder */}
-            <View style={styles.logoInner} />
+            {/* App Logo */}
+            <Image 
+              source={require('../assets/logo/8.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.appName}>Angel Eyes</Text>
           <Text style={styles.tagline}>Advanced Baby Monitoring Solution</Text>
@@ -67,7 +71,8 @@ const styles = StyleSheet.create({
     borderRadius: 75,
     borderWidth: 3,
     borderColor: '#fff',
-    backgroundColor: '#f0e6ff',
+    //backgroundColor: '#f0e6ff',
+    backgroundColor: '#fff',
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -80,11 +85,10 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
-  logoInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#6a1b9a',
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   appName: {
     fontSize: 36,
