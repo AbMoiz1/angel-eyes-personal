@@ -1,65 +1,30 @@
+// frontend/_layout.js
 import React from 'react';
 import { Stack } from 'expo-router';
-import { View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 export default function Layout() {
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: '#fff',
-        },
-        headerTintColor: '#6a1b9a',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          headerShown: false,
+    <ThemeProvider>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#fff',
+          },
+          headerTintColor: '#6a1b9a',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          headerShadowVisible: false,
         }}
-      />
-      <Stack.Screen
-        name="login"
-        options={{
-          title: 'Login',
-          headerBackTitleVisible: false,
-          presentation: 'card',
-        }}
-      />
-      <Stack.Screen
-        name="signup"
-        options={{
-          title: 'Sign Up',
-          headerBackTitleVisible: false,
-          presentation: 'card',
-        }}
-      />
-      <Stack.Screen
-        name="babyprofile"
-        options={{
-          title: 'Baby Profile',
-          headerBackTitleVisible: false,
-          presentation: 'card',
-        }}
-      />
-      <Stack.Screen
-        name="dashboard"
-        options={{
-          title: 'Dashboard',
-          headerBackTitleVisible: false,
-          presentation: 'card',          headerRight: () => (
-            <View style={{ marginRight: 15 }}>
-              <Ionicons name="settings-outline" size={24} color="#512da8" />
-            </View>
-          ),
-        }}
-      />
-    </Stack>
+      >
+        {/* your screens here */}
+        <Stack.Screen name="index" options={{ title: 'Home', headerShown: false }} />
+        <Stack.Screen name="login" options={{ title: 'Login', presentation: 'card' }} />
+        <Stack.Screen name="signup" options={{ title: 'Sign Up', presentation: 'card' }} />
+        <Stack.Screen name="babyprofile" options={{ title: 'Baby Profile', presentation: 'card' }} />
+        <Stack.Screen name="dashboard" options={{ title: 'Dashboard', presentation: 'card' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }
