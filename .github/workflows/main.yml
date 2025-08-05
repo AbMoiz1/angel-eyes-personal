@@ -9,7 +9,7 @@ on:
 jobs:
   backend:
     name: Backend Build & Test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: backend
@@ -24,7 +24,7 @@ jobs:
 
   frontend:
     name: React Native Setup
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: frontend
